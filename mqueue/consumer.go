@@ -4,6 +4,7 @@ import (
 	"Mqservice/controller"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/streadway/amqp"
 )
@@ -12,6 +13,14 @@ type RequestMessage struct {
 	username    string
 	coupon      string
 	requestTime int64 // 用户发起请求的时间
+}
+
+func JudegeValidTime(requestTime int64) bool {
+	t := time.Now()
+	if t.Unix()-requestTime > 40 {
+		return false
+	}
+	return true
 }
 
 // 只能在安装 rabbitmq 的服务器上操作
@@ -57,9 +66,25 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 		}
 	}
 
+	validation := JudegeValidTime(request.requestTime)
+	if validation == false {
+		err = ch.Publish(
+			"",     // exchange
+			q.Name, // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
+			false,  // mandatory
+			false,  // immediate
+			amqp.Publishing{
+				ContentType: "text/plain",
+				Body:        []byte(string(-2)), //这里的结果返回-2代表超时
+			})
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
 	res := controller.UserGetCoupon(request.username, request.coupon)
-	// 开始像消息队列另一边发回结果
-	err = ch.QueueBind(
+	// 开始向消息队列另一边发回结果
+	/*err = ch.QueueBind(
 		q.Name, // queue name
 		"key",  // routing key
 		"",     // exchange
@@ -68,13 +93,13 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 	)
 	if err != nil {
 		log.Println(err)
-	}
+	}*/
 
 	err = ch.Publish(
-		"",    // exchange
-		"key", // routing key  可以直接用队列名做routekey?这是默认情况吗?
-		false, // mandatory
-		false, // immediate
+		"",     // exchange
+		q.Name, // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
+		false,  // mandatory
+		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        []byte(string(res)),
