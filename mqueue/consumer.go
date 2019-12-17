@@ -64,10 +64,33 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 		if err != nil {
 			log.Println(err)
 		}
-	}
-
-	validation := JudegeValidTime(request.requestTime)
-	if validation == false {
+		validation := JudegeValidTime(request.requestTime)
+		if validation == false {
+			err = ch.Publish(
+				"",     // exchange
+				q.Name, // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
+				false,  // mandatory
+				false,  // immediate
+				amqp.Publishing{
+					ContentType: "text/plain",
+					Body:        []byte(string(-2)), //这里的结果返回-2代表超时
+				})
+			if err != nil {
+				log.Println(err)
+			}
+		}
+		res := controller.UserGetCoupon(request.username, request.coupon)
+		// 开始向消息队列另一边发回结果
+		/*err = ch.QueueBind(
+			q.Name, // queue name
+			"key",  // routing key
+			"",     // exchange
+			false,
+			nil,
+		)
+		if err != nil {
+			log.Println(err)
+		}*/
 		err = ch.Publish(
 			"",     // exchange
 			q.Name, // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
@@ -75,36 +98,11 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 			false,  // immediate
 			amqp.Publishing{
 				ContentType: "text/plain",
-				Body:        []byte(string(-2)), //这里的结果返回-2代表超时
+				Body:        []byte(string(res)),
 			})
 		if err != nil {
 			log.Println(err)
 		}
-	}
 
-	res := controller.UserGetCoupon(request.username, request.coupon)
-	// 开始向消息队列另一边发回结果
-	/*err = ch.QueueBind(
-		q.Name, // queue name
-		"key",  // routing key
-		"",     // exchange
-		false,
-		nil,
-	)
-	if err != nil {
-		log.Println(err)
-	}*/
-
-	err = ch.Publish(
-		"",     // exchange
-		q.Name, // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(string(res)),
-		})
-	if err != nil {
-		log.Println(err)
 	}
 }
