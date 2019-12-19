@@ -10,12 +10,13 @@ import (
 	"github.com/streadway/amqp"
 )
 
+// 里面的成员变量不大写就没法被正常的转换为[]byte
 type RequestMessage struct {
-	username    string
-	coupon      string
-	uuid        string // 表示用户发起请求的唯一id
-	requestTime int64  // 用户发起请求的时间
-	result      int
+	Username    string
+	Coupon      string
+	Uuid        string // 表示用户发起请求的唯一id
+	RequestTime int64  // 用户发起请求的时间
+	Result      int
 }
 
 func JudegeValidTime(requestTime int64) bool {
@@ -68,13 +69,13 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 			log.Println(err)
 		}
 		// 判定是否超时
-		validation := JudegeValidTime(request.requestTime)
+		validation := JudegeValidTime(request.RequestTime)
 		var requestSend RequestMessage
-		requestSend.username = request.username
-		requestSend.coupon = request.coupon
-		requestSend.uuid = request.uuid
-		requestSend.requestTime = request.requestTime
-		requestSend.result = -2
+		requestSend.Username = request.Username
+		requestSend.Coupon = request.Coupon
+		requestSend.Uuid = request.Uuid
+		requestSend.RequestTime = request.RequestTime
+		requestSend.Result = -2
 		// 转换成[]byte类型
 		b, err := json.Marshal(requestSend)
 		if err != nil {
@@ -95,12 +96,12 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 			}
 		}
 		// 处理用户获取优惠券
-		res := controller.UserGetCoupon(request.username, request.coupon)
-		requestSend.username = request.username
-		requestSend.coupon = request.coupon
-		requestSend.uuid = request.uuid
-		requestSend.requestTime = request.requestTime
-		requestSend.result = res
+		res := controller.UserGetCoupon(request.Username, request.Coupon)
+		requestSend.Username = request.Username
+		requestSend.Coupon = request.Coupon
+		requestSend.Uuid = request.Uuid
+		requestSend.RequestTime = request.RequestTime
+		requestSend.Result = res
 		// 将结构体信息转换成[]byte类型
 		b, err = json.Marshal(requestSend)
 		if err != nil {

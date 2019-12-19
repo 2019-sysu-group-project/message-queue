@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-var jsp int = 3
-
 func main() {
 	// 将来要改成使用配置文件连接
 	/*
@@ -21,25 +19,12 @@ func main() {
 		<-forever
 		log.Println("service exit.")
 	*/
-	//var js int = 2
-	go func() {
-		fmt.Println(jsp)
-		jsp = 5
-	}()
+	//var requestMessage RequestMessage
+
+	//fmt.Println(b)
+
+	go fmt.Println("21") // 这两个go函数执行有固定的先后吧?
+	go fmt.Println("22") // 这两个go函数执行有固定的先后吧?
 	time.Sleep(10000000000)
-	/*
-		v1 := func(i int) int {
-			jsp = 4
-			return js * js
-
-		}
-		result := v1(7)
-		fmt.Println(result)
-	*/
-	fmt.Println(jsp)
-
-	//go fmt.Println("21") // 这两个go函数执行有固定的先后吧?
-	//go fmt.Println("22") // 这两个go函数执行有固定的先后吧?
-	//time.Sleep(10000000000)
-	//go fmt.Println("222") // 为什么后面这个带go执行不到呢?
+	go fmt.Println("222") // 为什么后面这个带go执行不到呢?
 }
