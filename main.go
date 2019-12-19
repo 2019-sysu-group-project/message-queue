@@ -1,24 +1,42 @@
 package main
 
 import (
-	"Mqservice/mqueue"
-	"log"
-
-	"github.com/streadway/amqp"
+	"fmt"
+	"time"
 )
+
+var jsp int = 3
 
 func main() {
 	// 将来要改成使用配置文件连接
-	conn, err := amqp.Dial("amqp://guest:guest@127.0.0.1:35672/")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer conn.Close()
-	forever := make(chan bool)
-	go mqueue.ReportResult(conn, forever)
-	<-forever
-	log.Println("service exit.")
+	/*
+		conn, err := amqp.Dial("amqp://guest:guest@127.0.0.1:35672/")
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer conn.Close()
+		forever := make(chan bool)
+		go mqueue.ReportResult(conn, forever)
+		<-forever
+		log.Println("service exit.")
+	*/
+	//var js int = 2
+	go func() {
+		fmt.Println(jsp)
+		jsp = 5
+	}()
+	time.Sleep(10000000000)
+	/*
+		v1 := func(i int) int {
+			jsp = 4
+			return js * js
+
+		}
+		result := v1(7)
+		fmt.Println(result)
+	*/
+	fmt.Println(jsp)
 
 	//go fmt.Println("21") // 这两个go函数执行有固定的先后吧?
 	//go fmt.Println("22") // 这两个go函数执行有固定的先后吧?
