@@ -3,14 +3,13 @@ package controller
 import (
 	"Mqservice/model"
 	"fmt"
-	"log"
 
 	"golang.org/x/net/websocket"
 )
 
 // 返回0代表优惠券数目为0，返回2代表抢券成功，返回1代表用户已经抢到该券不可重复抢，返回-1代表数据库访问错误
 func UserGetCoupon(username string, coupons string) int {
-	num, err := model.GetLeftNumOfCoupon(coupons)
+	num, stock, err := model.GetLeftNumOfCoupon(coupons)
 	if err != nil {
 		fmt.Println(err)
 		return -1
@@ -34,7 +33,7 @@ func UserGetCoupon(username string, coupons string) int {
 		return 1
 	} else if acquireType == 2 {
 		fmt.Println("可以获取该优惠券")
-		err = model.UpdateCouponInfo(username, coupons, num-1)
+		err = model.UpdateCouponInfo(username, coupons, stock, num-1)
 		if err != nil {
 			fmt.Println("数据库访问错误")
 			return -1
@@ -62,29 +61,10 @@ func ReportResult(ws *websocket.Conn) {
 		}
 		// 返回0代表优惠券数目为0，返回2代表抢券成功，返回1代表用户已经抢到该券不可重复抢，返回-1代表数据库访问错误
 		var state int
-		state = userGetCoupon(request.username, request.coupon)
+		state = UserGetCoupon(request.username, request.coupon)
 		if err = websocket.Message.Send(ws, state); err != nil {
 			fmt.Println(err)
 			continue
 		}
 	}
-}
-
-func test() {
-	origin := "http://localhost/"
-	url := "ws://localhost:12345/ws"
-	ws, err := websocket.Dial(url, "", origin)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if _, err := ws.Write([]byte("hello, world!\n")); err != nil {
-		log.Fatal(err)
-	}
-	var msg = make([]byte, 512)
-	var n int
-	if n, err = ws.Read(msg); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Received: %s.\n", msg[:n])
-
 }

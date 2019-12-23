@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"smart/config"
+	"Mqservice/config"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
@@ -16,6 +16,7 @@ var GormDB *gorm.DB
 var maxConnectionTime = 5
 
 func init() {
+	fmt.Println("init函数1被执行！")
 	times := 1
 	for err := connectDB(); err != nil; times++ {
 		if times == maxConnectionTime {

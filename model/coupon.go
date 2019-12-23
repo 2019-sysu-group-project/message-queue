@@ -18,20 +18,31 @@ func (CouponInfo) TableName() string {
 	return "Coupon"
 }
 
-// 查询优惠券剩余数目
-func GetLeftNumOfCoupon(coupons string) (int, error) {
+// 查询优惠券剩余数目以及优惠券面额
+func GetLeftNumOfCoupon(coupons string) (int, float64, error) {
 	var coupon CouponInfo
 	query := GormDB.Where("coupons = ?", coupons).Find(&coupon)
 	if query.Error != nil {
-		return 0, query.Error
-	} else {
-		return coupon.Left, nil
+		return 0, 0, query.Error
 	}
+	return coupon.Left, coupon.Stock, nil
+
 }
 
-// 更新优惠券剩余数目
-func UpdateCouponInfo(username string, coupons string, left int) error {
+// 更新优惠券剩余数目并创建用户获取了优惠券的条目
+func UpdateCouponInfo(username string, coupons string, stock float64, left int) error {
 	ret := GormDB.Model(&CouponInfo{Username: username, Coupons: coupons}).Updates(CouponInfo{Left: left})
+	if ret.Error != nil {
+		return ret.Error
+	}
+	coupon := CouponInfo{
+		Username: username,
+		Coupons:  coupons,
+		Amount:   1,
+		Left:     1,
+		Stock:    stock,
+	}
+	ret = GormDB.Create(&coupon)
 	return ret.Error
 }
 
@@ -39,19 +50,22 @@ func UpdateCouponInfo(username string, coupons string, left int) error {
 func JudgeAcquirable(username string, coupons string) (int, error) {
 	var coupon CouponInfo
 	// 查询优惠券剩余数目
-	leftNum, err := GetLeftNumOfCoupon(coupons)
+	leftNum, _, err := GetLeftNumOfCoupon(coupons)
 	if err != nil {
 		return 0, err
 	} else if leftNum <= 0 {
 		return 0, nil
 	}
 	//查询用户是否获得过优惠券
-	var value int
+	var value int = -1
 	query := GormDB.Where("username = ? AND coupons = ?", username, coupons).Find(&coupon).Count(&value)
-	if query.Error != nil {
+	if value != 0 && value != 1 {
 		return 0, query.Error
+	}
+	if value == 0 {
+		return 2, nil
 	} else if value > 0 {
 		return 1, nil
 	}
-	return 2, nil
+	return 0, query.Error
 }
