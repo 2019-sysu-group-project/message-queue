@@ -49,13 +49,13 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 	}
 
 	msgChan, err := ch.Consume(
-		q.Name, // queue
-		"",     // consumer
-		true,   // auto-ack
-		false,  // exclusive
-		false,  // no-local
-		false,  // no-wait
-		nil,    // args
+		"hello", // queue
+		"",      // consumer
+		true,    // auto-ack
+		false,   // exclusive
+		false,   // no-local
+		false,   // no-wait
+		nil,     // args
 	)
 	if err != nil {
 		log.Println(err)
@@ -63,7 +63,11 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 
 	// 为什么这里go func()就能保证msgs里一直有消息？因为返回值是chan!msg是chan类型的
 	var request RequestMessage
+	var count int
 	for msg := range msgChan {
+		//用于debug
+		count++
+		fmt.Println(count)
 		err = json.Unmarshal(msg.Body, &request)
 		if err != nil {
 			log.Println(err)
@@ -76,6 +80,7 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 		requestSend.Uuid = request.Uuid
 		requestSend.RequestTime = request.RequestTime
 		requestSend.Result = -2
+		fmt.Println(requestSend.Uuid)
 		// 转换成[]byte类型
 		b, err := json.Marshal(requestSend)
 		if err != nil {
@@ -109,10 +114,10 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 		}
 
 		err = ch.Publish(
-			"",     // exchange
-			q.Name, // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
-			false,  // mandatory
-			false,  // immediate
+			"",      // exchange
+			"hello", // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
+			false,   // mandatory
+			false,   // immediate
 			amqp.Publishing{
 				ContentType: "text/plain",
 				Body:        b,

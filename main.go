@@ -17,7 +17,7 @@ func main() {
 	}
 	defer conn.Close()
 	forever := make(chan bool)
-	go mqueue.ReportResult(conn, forever)
+	mqueue.ReportResult(conn, forever)
 	<-forever
 	log.Println("service exit.")
 
