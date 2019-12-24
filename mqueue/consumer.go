@@ -36,6 +36,7 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 	defer ch.Close()
 
 	// 队列声明
+	// 接收消息的时候从第一条队列接收
 	q, err := ch.QueueDeclare(
 		"hello", // name
 		false,   // durable
@@ -49,13 +50,13 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 	}
 
 	msgChan, err := ch.Consume(
-		"hello", // queue
-		"",      // consumer
-		true,    // auto-ack
-		false,   // exclusive
-		false,   // no-local
-		false,   // no-wait
-		nil,     // args
+		q.Name, // queue
+		"",     // consumer
+		true,   // auto-ack
+		false,  // exclusive
+		false,  // no-local
+		false,  // no-wait
+		nil,    // args
 	)
 	if err != nil {
 		log.Println(err)
@@ -87,11 +88,12 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 			fmt.Println("error:", err)
 		}
 		if validation == false {
+			// 往回发消息的时候使用第二条队列
 			err = ch.Publish(
-				"",     // exchange
-				q.Name, // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
-				false,  // mandatory
-				false,  // immediate
+				"",       // exchange
+				"hello2", // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
+				false,    // mandatory
+				false,    // immediate
 				amqp.Publishing{
 					ContentType: "text/plain",
 					Body:        b, //这里的结果返回-2代表超时
@@ -113,11 +115,12 @@ func ReportResult(conn *amqp.Connection, forever chan<- bool) {
 			fmt.Println("error:", err)
 		}
 
+		// 往回发消息的时候使用第二条队列
 		err = ch.Publish(
-			"",      // exchange
-			"hello", // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
-			false,   // mandatory
-			false,   // immediate
+			"",       // exchange
+			"hello2", // routing key  可以直接用队列名做routekey?这是默认情况吗,没有声明的时候routing key为队列名称
+			false,    // mandatory
+			false,    // immediate
 			amqp.Publishing{
 				ContentType: "text/plain",
 				Body:        b,
